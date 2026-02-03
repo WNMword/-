@@ -121,6 +121,23 @@ bool IsOpposite(Direction dir, Direction next) {
          (dir == Direction::kLeft && next == Direction::kRight) ||
          (dir == Direction::kRight && next == Direction::kLeft);
 }
+void WaitForExitKey() {
+#ifdef _WIN32
+  while (true) {
+    char key = static_cast<char>(_getch());
+    if (key == 'k' || key == 'K') {
+      break;
+    }
+  }
+#else
+  while (true) {
+    char key = ReadChar();
+    if (key == 'k' || key == 'K') {
+      break;
+    }
+  }
+#endif
+}
 }  // namespace
 
 int main() {
@@ -137,6 +154,8 @@ int main() {
 
   bool running = true;
   int score = 0;
+  int beans = 0;
+  auto start_time = std::chrono::steady_clock::now();
 
   while (running) {
 #ifdef _WIN32
@@ -207,8 +226,15 @@ int main() {
     }
 
     if (hit_wall || hit_self) {
+      auto end_time = std::chrono::steady_clock::now();
+      auto elapsed_seconds =
+          std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time).count();
       ClearScreen();
-      std::cout << "Game Over! Final Score: " << score << "\n";
+      std::cout << "Game Over!\n";
+      std::cout << "Beans collected: " << beans << "\n";
+      std::cout << "Survival time: " << elapsed_seconds << " seconds\n";
+      std::cout << "Press K to exit.\n";
+      WaitForExitKey();
       break;
     }
 
@@ -216,6 +242,7 @@ int main() {
 
     if (head == food) {
       score += 10;
+      beans += 1;
       food = RandomEmptyCell(snake, rng);
     } else {
       snake.pop_back();
